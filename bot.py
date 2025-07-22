@@ -84,4 +84,4 @@ if __name__ == "__main__":
     Thread(target=run_flask).start()
 
     import asyncio
-    asyncio.run(main())
+    asyncio.run(run_bot())
