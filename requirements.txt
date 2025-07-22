@@ -1,0 +1,6 @@
+python-telegram-bot==20.3
+gspread
+oauth2client
+fuzzywuzzy
+python-Levenshtein
+nest_asyncio
