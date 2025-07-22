@@ -5,12 +5,20 @@ from oauth2client.service_account import ServiceAccountCredentials
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram import Update
 from fuzzywuzzy import process
+from your_bot_module import main  # your async main()
+
+
+import threading
+from flask import Flask
+import os
 
 nest_asyncio.apply()
 
 # ========== CONFIG ==========
-BOT_TOKEN = "7570710604:AAF5rnPjLz1F69g67KtBnoBgdXOPK_7ZwxE"  # ← replace with your bot token
-SPREADSHEET_ID = "1T84RPPic4jANe3LtSRvsjPr7HInOrp_PTTBjfatAbDE"  # ← your sheet ID
+
+BOT_TOKEN = "7570710604:AAF5rnPjLz1F69g67KtBnoBgdXOPK_7ZwxE"
+SPREADSHEET_ID = "1T84RPPic4jANe3LtSRvsjPr7HInOrp_PTTBjfatAbDE"
+
 # ============================
 
 # STEP 1: Connect to Google Sheet
@@ -39,16 +47,33 @@ async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = find_best_match(query)
     await update.message.reply_text(result)
 
-
-# STEP 4: Start the bot
-async def main():
+# STEP 4: Start the Telegram bot
+async def run_bot():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_query))
-    print("✅ Bot is running... Open Telegram and talk to it!")
+    print("✅ Bot is running...")
     await app.run_polling()
 
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+# STEP 5: Dummy Flask server to keep the service alive
+def run_flask():
+    app = Flask(__name__)
 
+    @app.route('/')
+    def home():
+        return "🤖 Bot is alive!"
+
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+# STEP 6: Run everything together
+if __name__ == "__main__":
+    Thread(target=run_flask).start()
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        print("❌ Bot stopped by user.")
+    finally:
+        loop.close()

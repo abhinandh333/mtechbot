@@ -4,3 +4,4 @@ oauth2client
 fuzzywuzzy
 python-Levenshtein
 nest_asyncio
+flask
