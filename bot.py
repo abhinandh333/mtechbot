@@ -5,7 +5,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram import Update
 from fuzzywuzzy import process
-from your_bot_module import main  # your async main()
+
 
 
 import threading
@@ -68,12 +68,20 @@ def run_flask():
 
 # STEP 6: Run everything together
 if __name__ == "__main__":
+    from threading import Thread
+    from flask import Flask
+    import os
+
+    def run_flask():
+        app = Flask(__name__)
+
+        @app.route('/')
+        def home():
+            return "Bot is running!"
+
+        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
     Thread(target=run_flask).start()
 
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(main())
-    except KeyboardInterrupt:
-        print("❌ Bot stopped by user.")
-    finally:
-        loop.close()
+    import asyncio
+    asyncio.run(main())
