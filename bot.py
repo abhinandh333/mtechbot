@@ -30,6 +30,7 @@ data = sheet.get_all_records()
 
 # STEP 2: Search logic
 def find_best_match(query):
+    data = sheet.get_all_records()
     topics = [row['Topic Keyword'] for row in data]
     match, score = process.extractOne(query, topics)
     if score > 60:
