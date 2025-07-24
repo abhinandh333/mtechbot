@@ -41,7 +41,7 @@ def find_best_match(query):
 
 # STEP 3: Bot command handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Hi! Just type the subjects ,teacher's name,seminar,latex etc  and I'll give you the note link!(created on the basics of RIT MTech 24-26 CSE batch)")
+    await update.message.reply_text("👋 Hi! Just type subjects, teacher's name, seminar, LaTeX ZIP, etc., and get the note link! (made with ❤️ by www.skillpiearn.com)")
 
 async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.lower()
