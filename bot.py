@@ -41,7 +41,7 @@ def find_best_match(query):
 
 # STEP 3: Bot command handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Hi! Just type subjects, teacher's name, seminar, LaTeX ZIP, etc., and get the note link! (made with ❤️ by www.skillpiearn.com)")
+    await update.message.reply_text("👋 Hi! Just type subjects, teacher's name, seminar, LaTeX ZIP, etc., and get the note link! (made with ❤️ by Tutorain)")
 
 async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.lower()
@@ -86,3 +86,4 @@ if __name__ == "__main__":
 
     import asyncio
     asyncio.run(run_bot())
+
