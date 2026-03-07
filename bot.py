@@ -70,7 +70,10 @@ def home():
 def webhook():
     data = request.get_json(force=True)
     update = Update.de_json(data, application.bot)
-    application.process_update(update)
+
+    import asyncio
+    asyncio.run(application.process_update(update))
+
     return "ok"
 
 # ===== START SERVER =====
@@ -85,5 +88,6 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
