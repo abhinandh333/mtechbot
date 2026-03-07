@@ -1,90 +1,87 @@
-import gspread
-import asyncio
-import nest_asyncio
-from oauth2client.service_account import ServiceAccountCredentials
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from telegram import Update
-from fuzzywuzzy import process
-
-
-
-import threading
-from flask import Flask
 import os
+import gspread
+from flask import Flask, request
+from oauth2client.service_account import ServiceAccountCredentials
+from fuzzywuzzy import process
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
-nest_asyncio.apply()
-
-# ========== CONFIG ==========
-
+# ========= CONFIG =========
 BOT_TOKEN = "7570710604:AAF5rnPjLz1F69g67KtBnoBgdXOPK_7ZwxE"
 SPREADSHEET_ID = "1T84RPPic4jANe3LtSRvsjPr7HInOrp_PTTBjfatAbDE"
+# ==========================
 
-# ============================
+# Connect to Google Sheets
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/drive"
+]
 
-# STEP 1: Connect to Google Sheet
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name(
+    "credentials.json",
+    scope
+)
+
 client = gspread.authorize(creds)
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-data = sheet.get_all_records()
 
-# STEP 2: Search logic
+# ===== SEARCH FUNCTION =====
 def find_best_match(query):
     data = sheet.get_all_records()
     topics = [row['Topic Keyword'] for row in data]
+
     match, score = process.extractOne(query, topics)
+
     if score > 60:
         for row in data:
             if row['Topic Keyword'].lower() == match.lower():
-                return f"📘 *{match.title()}*: {row['Google Drive Link']}"
+                return f"📘 *{match.title()}*\n{row['Google Drive Link']}"
+
     return "❌ Sorry, no matching notes found."
 
-# STEP 3: Bot command handlers
+# ===== BOT COMMANDS =====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Hi! Just type subjects, teacher's name, seminar, LaTeX ZIP, etc., and get the note link! (made with ❤️ by Tutorain-a MA product)")
+    await update.message.reply_text(
+        "👋 Hi!\n\n"
+        "Type subject name, teacher name, seminar, or topic.\n"
+        "I will send the Google Drive notes.\n\n"
+        "Made with ❤️ by Tutorain"
+    )
 
 async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.lower()
     result = find_best_match(query)
     await update.message.reply_text(result)
 
-# STEP 4: Start the Telegram bot
-async def run_bot():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_query))
-    print("✅ Bot is running...")
-    await app.run_polling()
+# ===== TELEGRAM APPLICATION =====
+application = ApplicationBuilder().token(BOT_TOKEN).build()
 
-# STEP 5: Dummy Flask server to keep the service alive
-def run_flask():
-    app = Flask(__name__)
+application.add_handler(CommandHandler("start", start))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_query))
 
-    @app.route('/')
-    def home():
-        return "🤖 Bot is alive!"
+# ===== FLASK SERVER =====
+app = Flask(__name__)
 
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+@app.route("/")
+def home():
+    return "🤖 Telegram Bot Running!"
 
-# STEP 6: Run everything together
+@app.route("/webhook", methods=["POST"])
+async def webhook():
+    data = request.get_json(force=True)
+    update = Update.de_json(data, application.bot)
+    await application.process_update(update)
+    return "ok"
+
+# ===== START SERVER =====
 if __name__ == "__main__":
-    from threading import Thread
-    from flask import Flask
-    import os
-
-    def run_flask():
-        app = Flask(__name__)
-
-        @app.route('/')
-        def home():
-            return "Bot is running!"
-
-        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
-    Thread(target=run_flask).start()
-
     import asyncio
-    asyncio.run(run_bot())
 
+    async def main():
+        await application.initialize()
+        await application.start()
 
+    asyncio.get_event_loop().run_until_complete(main())
+
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
